@@ -215,13 +215,15 @@ export class ScalaEndpointExtractor {
   }
 
   private isHttp4sRoute(line: string): boolean {
-    // Match http4s route patterns: case GET -> Root / "path" / "segments"
-    return /case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/.test(line);
+    // Match http4s route patterns: 
+    // case GET -> Root / "path" / "segments"
+    // case variable @ GET -> Root / "path" / "segments"
+    return /case\s+(?:\w+\s*@\s+)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/.test(line);
   }
 
   private extractHttp4sRoute(line: string, filePath: string, lineNumber: number, className?: string): Endpoint | null {
-    // Extract HTTP method from: case GET -> Root / "path" / "segments"
-    const methodMatch = line.match(/case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/);
+    // Extract HTTP method from: case GET -> Root / "path" / "segments" or case variable @ GET -> Root
+    const methodMatch = line.match(/case\s+(?:\w+\s*@\s+)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/);
     if (!methodMatch) return null;
 
     const method = methodMatch[1] as HttpMethod;
