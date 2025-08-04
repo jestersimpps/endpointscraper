@@ -172,30 +172,34 @@ val routes: AuthedRoutes[User, F] = AuthedRoutes.of[User, F] {
 
 ### Enhanced http4s Pattern Recognition
 **Version**: August 2025
-**Impact**: Endpoint detection increased from 107 to 179 endpoints in pos project (+67% improvement)
+**Impact**: Endpoint detection increased 
 
 **New Pattern Support**:
 - **Variable-Prefixed Cases**: Added support for `case variable @ METHOD -> Root` patterns
-- **Improved Regex**: Enhanced regex pattern to handle optional variable prefixes with `(?:\w+\s*@\s+)?`
-- **Better Extraction**: More robust method extraction that handles both standard and prefixed patterns
+- **Method.* Format**: Added support for `case Method.GET -> Root` patterns 
+- **Combined Patterns**: Support for `case variable @ Method.GET -> Root` patterns
+- **Improved Regex**: Enhanced regex pattern to handle optional variable prefixes and Method. prefixes with `(?:\w+\s*@\s+)?(?:Method\.)?`
+- **Better Extraction**: More robust method extraction that handles all four pattern variations
 
 **Technical Implementation**:
 ```typescript
 // Before: Only supported standard patterns
 /case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/
 
-// After: Supports both standard and variable-prefixed patterns  
-/case\s+(?:\w+\s*@\s+)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/
+// After: Supports variable-prefixed and Method.* patterns  
+/case\s+(?:\w+\s*@\s+)?(?:Method\.)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/
 ```
 
 **Pattern Examples**:
 - **Standard**: `case GET -> Root / "api" / "users"`
 - **Variable-Prefixed**: `case context @ POST -> Root / "voorlopigewijzigingen"`
-- **With Parameters**: `case request @ PUT -> Root / "users" / UserId(id)`
+- **Method.* Format**: `case Method.GET -> Root / "api" / "status"`
+- **Combined**: `case request @ Method.PUT -> Root / "users" / UserId(id)`
 
 **Regex Components**:
 - `case\s+` - Matches "case" with following whitespace
 - `(?:\w+\s*@\s+)?` - Optional non-capturing group for variable prefix (e.g., "context @ ")
+- `(?:Method\.)?` - Optional non-capturing group for Method. prefix
 - `(GET|POST|PUT|PATCH|DELETE)` - Captures HTTP method
 - `\s*->\s*Root` - Matches arrow pattern pointing to Root
 

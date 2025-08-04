@@ -19,7 +19,7 @@ EndpointScraper is a Node.js CLI tool that extracts REST API endpoints from Java
 
 ## Recent Improvements
 - **Enhanced http4s Support**: Added support for variable-prefixed case patterns (`case variable @ METHOD -> Root`)
-- **Performance Impact**: 67% increase in endpoint detection (107 → 179 endpoints in pos project)
+- **Performance Impact**: 67% increase in endpoint detection
 - **Pattern Recognition**: Improved regex patterns for more comprehensive route extraction
 
 ## Design Principles

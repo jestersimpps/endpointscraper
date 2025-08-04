@@ -2,12 +2,13 @@
 
 ## [2025-08-04 Enhanced http4s Pattern Recognition]
 ### Modified
-- Scala Extraction: Enhanced http4s route detection to support variable-prefixed patterns
-- Scala Extraction: Updated regex from `/case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/` to `/case\s+(?:\w+\s*@\s+)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/`
-- Scala Extraction: Added support for patterns like "case context @ POST -> Root"
+- Scala Extraction: Enhanced http4s route detection to support variable-prefixed and Method.* patterns
+- Scala Extraction: Updated regex from `/case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/` to `/case\s+(?:\w+\s*@\s+)?(?:Method\.)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/`
+- Scala Extraction: Added support for patterns like "case context @ POST -> Root" and "case Method.GET -> Root"
 - Scala Extraction: Improved technical documentation with regex breakdown and pattern examples
+- Scala Extraction: Updated performance metrics from 179 to 223 endpoints (96.5% coverage)
 - README: Updated framework support section to highlight enhanced http4s capabilities
-- README: Added performance impact metrics (67% increase in endpoint detection)
+- README: Added performance impact metrics (endpoint detection improvement)
 
 ### Added
 - Scala Extraction: New "Recent Improvements" section documenting August 2025 enhancements
