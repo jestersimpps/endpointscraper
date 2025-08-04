@@ -1,12 +1,30 @@
 # CLI Interface
 
 ## What it does
-Provides a command-line interface for the endpointscraper tool with options for scanning directories, controlling output verbosity, generating summaries, and exporting results to CSV format.
+Provides multiple command-line interfaces for the endpointscraper tool, including interactive modes, quick scanning, and traditional command-line arguments. Supports directory scanning, output control, API specification analysis, and CSV export.
 
-## Command Structure
+## Command Modes
+
+### Interactive Mode (Default)
 ```
-endpointscraper <directory> [options]
+endpointscraper
+endpointscraper interactive
+endpointscraper i
 ```
+Full interactive workflow with guided prompts for all options.
+
+### Quick Mode
+```
+endpointscraper quick
+endpointscraper q
+```
+Streamlined mode asking only for directory path with optimized defaults.
+
+### Legacy Command Mode
+```
+endpointscraper scan <directory> [options]
+```
+Traditional CLI arguments for automation and backward compatibility.
 
 ## Arguments
 
@@ -35,6 +53,12 @@ endpointscraper <directory> [options]
 **Purpose**: Skip CSV file export (exports by default)
 **Default Behavior**: Always exports to CSV unless explicitly disabled
 **Output Location**: `./output/` directory with timestamped filename
+
+### API Specification Analysis
+**Flag**: `--api-spec`
+**Purpose**: Enable API specification discovery and coverage analysis
+**Default Behavior**: Disabled (opt-in feature)
+**Functionality**: Finds OpenAPI/Swagger files and analyzes endpoint coverage
 
 ## Option Combinations
 
