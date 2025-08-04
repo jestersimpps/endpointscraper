@@ -16,7 +16,6 @@
 - **Content-First Approach**: Removed dependency on filename conventions, enabling discovery of any valid API specification
 
 ### Real-World Impact
-- **Proevenservice Project Results**: Improved from 0 specifications found to 2 specifications discovered (94% coverage)
 - **Universal Compatibility**: Now discovers specifications regardless of naming conventions or file locations
 - **False Positive Prevention**: Multi-layer validation prevents processing of non-specification files
 - **Framework Agnostic**: Works across all development environments and organizational standards

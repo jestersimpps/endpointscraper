@@ -61,13 +61,15 @@ export class InteractivePrompt {
       }
     ]);
 
-    return {
+    const result = {
       directory: answers.directory,
       summary: answers.summary,
       quiet: answers.outputMode === 'quiet' || answers.outputMode === 'minimal',
       csv: answers.csv,
       apiSpec: answers.apiSpec
     };
+    
+    return result;
   }
 
   async getDirectoryOnly(): Promise<string> {

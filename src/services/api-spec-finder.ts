@@ -28,12 +28,6 @@ export class ApiSpecFinder {
     const specs: ApiSpec[] = [];
 
     console.log(`🔍 Scanning ${potentialFiles.length} YAML/JSON files for API specifications...`);
-    console.log(`🐛 DEBUG: Project path: ${projectPath}`);
-    console.log(`🐛 DEBUG: Current working directory: ${process.cwd()}`);
-    
-    if (potentialFiles.length > 0) {
-      console.log(`🐛 DEBUG: First few files found:`, potentialFiles.slice(0, 5));
-    }
 
     for (const filePath of potentialFiles) {
       try {

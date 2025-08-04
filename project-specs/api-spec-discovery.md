@@ -135,14 +135,6 @@ summary?: string    # Human-readable description
 - **Smart Logging**: Only report errors for files that appear to be specifications
 - **Memory Efficient**: Process files individually, no large collections in memory
 
-### Real-World Performance Impact
-**Case Study - Proevenservice Project**:
-- **Before**: 0 specifications found (filename-based approach missed files)
-- **After**: 2 valid specifications discovered (content-based approach)
-- **Coverage Improvement**: From 0% to 94% API specification coverage
-- **Files Scanned**: ~50 YAML/JSON files processed efficiently
-- **Processing Time**: Sub-second discovery and validation
-
 ## Validation Rules
 
 ### Content-Based Validation Algorithm

@@ -15,6 +15,7 @@ import type { ScanResultWithCoverage, ApiSpecInfo, EndpointWithCoverage } from '
 async function runEndpointScan(options: InteractiveOptions): Promise<void> {
   const { directory, summary, quiet, csv, apiSpec } = options;
   
+  
   try {
     const targetPath = resolve(directory);
     
