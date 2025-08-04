@@ -58,6 +58,15 @@ export class ScalaEndpointExtractor {
         }
         continue;
       }
+
+      // http4s routes - case GET -> Root / "path" / "segments"
+      if (this.isHttp4sRoute(line)) {
+        const endpoint = this.extractHttp4sRoute(line, filePath, lineNumber, currentClassName);
+        if (endpoint) {
+          endpoints.push(endpoint);
+        }
+        continue;
+      }
     }
 
     return endpoints;
@@ -203,6 +212,62 @@ export class ScalaEndpointExtractor {
       }
     }
     return undefined;
+  }
+
+  private isHttp4sRoute(line: string): boolean {
+    // Match http4s route patterns: case GET -> Root / "path" / "segments"
+    return /case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/.test(line);
+  }
+
+  private extractHttp4sRoute(line: string, filePath: string, lineNumber: number, className?: string): Endpoint | null {
+    // Extract HTTP method from: case GET -> Root / "path" / "segments"
+    const methodMatch = line.match(/case\s+(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root/);
+    if (!methodMatch) return null;
+
+    const method = methodMatch[1] as HttpMethod;
+    
+    // Extract path segments from Root / "segment1" / "segment2" / VariableName(param)
+    const pathSegments: string[] = [];
+    
+    // Find all quoted strings and path variables after Root
+    const rootIndex = line.indexOf('Root');
+    if (rootIndex === -1) return null;
+    
+    const pathPart = line.substring(rootIndex + 4); // Skip "Root"
+    
+    // Match quoted strings like "users", "about", "me"
+    const quotedMatches = pathPart.match(/"([^"]+)"/g);
+    if (quotedMatches) {
+      quotedMatches.forEach(match => {
+        pathSegments.push(match.slice(1, -1)); // Remove quotes
+      });
+    }
+    
+    // Match path variables like BestekId(id), IntVar(num)
+    const variableMatches = pathPart.match(/[A-Z]\w*\([^)]*\)/g);
+    if (variableMatches) {
+      variableMatches.forEach(match => {
+        // Convert BestekId(id) to :id, IntVar(num) to :num
+        const paramMatch = match.match(/\(([^)]*)\)/);
+        if (paramMatch && paramMatch[1]) {
+          pathSegments.push(`:${paramMatch[1]}`);
+        } else {
+          // If no parameter name, use generic placeholder
+          pathSegments.push(':id');
+        }
+      });
+    }
+    
+    // Build the final path
+    const path = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+    
+    return {
+      method,
+      path,
+      filePath,
+      lineNumber,
+      className
+    };
   }
 
   private combinePaths(basePath: string, endpointPath: string): string {

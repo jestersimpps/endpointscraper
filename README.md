@@ -7,7 +7,7 @@ A powerful Node.js CLI tool that extracts REST API endpoints from Java and Scala
 - 🔍 **Multi-language support**: Scans both Java and Scala files
 - 🎯 **Framework detection**: Supports multiple frameworks:
   - **Java**: Spring Boot annotations (`@GetMapping`, `@PostMapping`, etc.)
-  - **Scala**: Spring annotations, Play Framework routes, Akka HTTP routes
+  - **Scala**: Spring annotations, Play Framework routes, Akka HTTP routes, http4s routes
 - 📁 **Smart scanning**: Recursively scans directories while ignoring build/test folders
 - 🎨 **Rich output**: Color-coded results with file locations and line numbers
 - ⚡ **Fast performance**: Optimized file parsing with glob patterns
@@ -123,6 +123,23 @@ val route =
       }
     }
   }
+```
+
+### Scala (http4s)
+```scala
+val routes: AuthedRoutes[User, F] = AuthedRoutes.of[User, F] {
+  case GET -> Root / "users" / "about" / "me" as user =>
+    Ok(user)
+  
+  case GET -> Root / "users" / "my" / "personas" as user =>
+    for {
+      personas <- personaService.getPersonas(user)
+      response <- Ok(personas)
+    } yield response
+    
+  case GET -> Root / "users" / "met" / "rol" / RolVar(rol) as user =>
+    getUsersWithRole(rol)
+}
 ```
 
 ## Output Format
