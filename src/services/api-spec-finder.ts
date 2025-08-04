@@ -17,41 +17,65 @@ export interface ApiEndpoint {
 }
 
 export class ApiSpecFinder {
-  private readonly specPatterns = [
-    '**/*swagger*.{yaml,yml,json}',
-    '**/*openapi*.{yaml,yml,json}',
-    '**/*api-spec*.{yaml,yml,json}',
-    '**/spec*.{yaml,yml,json}',
-    '**/docs/**/*.{yaml,yml,json}',
-    '**/api/**/*.{yaml,yml,json}'
+  private readonly filePatterns = [
+    '**/*.yaml',
+    '**/*.yml', 
+    '**/*.json'
   ];
 
   async findApiSpecs(projectPath: string): Promise<ApiSpec[]> {
-    const specFiles = await this.findSpecFiles(projectPath);
+    const potentialFiles = await this.findPotentialSpecFiles(projectPath);
     const specs: ApiSpec[] = [];
 
-    for (const filePath of specFiles) {
+    console.log(`🔍 Scanning ${potentialFiles.length} YAML/JSON files for API specifications...`);
+    console.log(`🐛 DEBUG: Project path: ${projectPath}`);
+    console.log(`🐛 DEBUG: Current working directory: ${process.cwd()}`);
+    
+    if (potentialFiles.length > 0) {
+      console.log(`🐛 DEBUG: First few files found:`, potentialFiles.slice(0, 5));
+    }
+
+    for (const filePath of potentialFiles) {
       try {
-        const spec = await this.parseSpecFile(filePath);
+        const spec = await this.parseAndValidateSpecFile(filePath);
         if (spec) {
           specs.push(spec);
         }
       } catch (error) {
-        console.warn(`Failed to parse spec file ${filePath}:`, error);
+        // Silently skip files that aren't valid specs - this is expected
+        // Only log if it's a parsing error on what looks like a spec file
+        if (this.looksLikeSpecFile(filePath)) {
+          console.warn(`⚠️  Could not parse potential spec file ${filePath}:`, error instanceof Error ? error.message : error);
+        }
       }
     }
 
     return specs;
   }
 
-  private async findSpecFiles(projectPath: string): Promise<string[]> {
+  private async findPotentialSpecFiles(projectPath: string): Promise<string[]> {
     const allFiles: string[] = [];
 
-    for (const pattern of this.specPatterns) {
+    for (const pattern of this.filePatterns) {
       const files = await glob(pattern, {
         cwd: projectPath,
         absolute: true,
-        ignore: ['**/node_modules/**', '**/target/**', '**/build/**', '**/dist/**']
+        ignore: [
+          '**/node_modules/**', 
+          '**/target/**', 
+          '**/build/**', 
+          '**/dist/**',
+          '**/.git/**',
+          '**/coverage/**',
+          '**/test/**',
+          '**/tests/**',
+          '**/*.test.*',
+          '**/*.spec.*',
+          '**/package*.json',
+          '**/tsconfig*.json',
+          '**/jest*.json',
+          '**/eslint*.json'
+        ]
       });
       allFiles.push(...files);
     }
@@ -59,7 +83,17 @@ export class ApiSpecFinder {
     return [...new Set(allFiles)];
   }
 
-  private async parseSpecFile(filePath: string): Promise<ApiSpec | null> {
+  private looksLikeSpecFile(filePath: string): boolean {
+    const fileName = filePath.toLowerCase();
+    const specIndicators = [
+      'swagger', 'openapi', 'api-spec', 'api.', 'spec.', 
+      '/docs/', '/api/', '/swagger/', '/openapi/',
+      'management.', 'actuator.'
+    ];
+    return specIndicators.some(indicator => fileName.includes(indicator));
+  }
+
+  private async parseAndValidateSpecFile(filePath: string): Promise<ApiSpec | null> {
     const content = await readFile(filePath, 'utf-8');
     let specData: any;
 
@@ -91,7 +125,42 @@ export class ApiSpecFinder {
   }
 
   private isValidApiSpec(data: any): boolean {
-    return data && (data.openapi || data.swagger) && data.paths;
+    if (!data || typeof data !== 'object') {
+      return false;
+    }
+
+    // Check for OpenAPI/Swagger identifier
+    const hasApiIdentifier = data.openapi || data.swagger;
+    if (!hasApiIdentifier) {
+      return false;
+    }
+
+    // Check for paths object (core requirement)
+    if (!data.paths || typeof data.paths !== 'object') {
+      return false;
+    }
+
+    // Additional validation for common API spec properties
+    const hasInfo = data.info && typeof data.info === 'object';
+    if (!hasInfo) {
+      return false;
+    }
+
+    // Validate version format
+    if (data.openapi) {
+      // OpenAPI version should be 3.x.x
+      const versionMatch = /^3\.\d+\.\d+/.test(data.openapi);
+      if (!versionMatch) {
+        return false;
+      }
+    } else if (data.swagger) {
+      // Swagger version should be 2.0
+      if (data.swagger !== '2.0') {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private extractEndpoints(specData: any): ApiEndpoint[] {
