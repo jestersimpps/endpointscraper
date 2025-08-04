@@ -40,7 +40,8 @@ export class FileScanner {
   private async findRelevantFiles(directoryPath: string): Promise<string[]> {
     const patterns = [
       '**/*.java',
-      '**/*.scala'
+      '**/*.scala',
+      '**/routes'
     ];
 
     const files = await glob(patterns, {
@@ -51,10 +52,15 @@ export class FileScanner {
         '**/target/**',
         '**/build/**',
         '**/.git/**',
-        '**/test/**',
-        '**/tests/**'
+        '**/*Test.scala',
+        '**/*Test.java',
+        '**/*Spec.scala',
+        '**/*IT.scala',
+        '**/*IntegrationTest.scala',
+        '**/src/test/**'
       ]
     });
+
 
     return files;
   }
@@ -62,7 +68,7 @@ export class FileScanner {
   private async extractEndpoints(filePath: string, content: string): Promise<Endpoint[]> {
     if (filePath.endsWith('.java')) {
       return this.javaExtractor.extract(filePath, content);
-    } else if (filePath.endsWith('.scala')) {
+    } else if (filePath.endsWith('.scala') || filePath.endsWith('/routes')) {
       return this.scalaExtractor.extract(filePath, content);
     }
     return [];

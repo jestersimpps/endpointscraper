@@ -3,8 +3,13 @@ import type { Endpoint, HttpMethod } from '@/models/endpoint';
 export class ScalaEndpointExtractor {
   extract(filePath: string, content: string): Endpoint[] {
     const endpoints: Endpoint[] = [];
-    const lines = content.split('\n');
     
+    // Skip test files completely
+    if (this.isTestFile(filePath)) {
+      return endpoints;
+    }
+    
+    const lines = content.split('\n');
     let currentClassName: string | undefined;
     let baseMapping = '';
 
@@ -17,6 +22,7 @@ export class ScalaEndpointExtractor {
         continue;
       }
 
+      // Play Framework routes file
       if (this.isPlayFrameworkRoute(line)) {
         const endpoint = this.extractPlayRoute(line, filePath, lineNumber);
         if (endpoint) {
@@ -25,6 +31,7 @@ export class ScalaEndpointExtractor {
         continue;
       }
 
+      // Spring Boot annotations
       if (this.isSpringAnnotation(line)) {
         const method = this.extractHttpMethod(line);
         const path = this.extractPath(line);
@@ -43,6 +50,7 @@ export class ScalaEndpointExtractor {
         continue;
       }
 
+      // Akka HTTP routes - more precise detection
       if (this.isAkkaHttpRoute(line)) {
         const endpoint = this.extractAkkaRoute(line, filePath, lineNumber, currentClassName);
         if (endpoint) {
@@ -53,6 +61,20 @@ export class ScalaEndpointExtractor {
     }
 
     return endpoints;
+  }
+
+  private isTestFile(filePath: string): boolean {
+    const testPatterns = [
+      /Test\.scala$/,
+      /Spec\.scala$/,
+      /IT\.scala$/,
+      /IntegrationTest\.scala$/,
+      /TestDsl\.scala$/,
+      /\/test\//,
+      /\/tests\//
+    ];
+    
+    return testPatterns.some(pattern => pattern.test(filePath));
   }
 
   private isClassDeclaration(line: string): boolean {
@@ -66,8 +88,9 @@ export class ScalaEndpointExtractor {
   }
 
   private isPlayFrameworkRoute(line: string): boolean {
-    return /^\s*(GET|POST|PUT|PATCH|DELETE)\s+/.test(line) && 
-           line.includes('controllers.');
+    // Match lines like: GET /api/path controllers.Controller.method()
+    return /^\s*(GET|POST|PUT|PATCH|DELETE)\s+\/\S+/.test(line) && 
+           /\s+\S+\.\S+/.test(line);
   }
 
   private extractPlayRoute(line: string, filePath: string, lineNumber: number): Endpoint | null {
@@ -92,22 +115,45 @@ export class ScalaEndpointExtractor {
   }
 
   private isAkkaHttpRoute(line: string): boolean {
-    return /(get|post|put|patch|delete)\s*\(/.test(line) ||
-           /path\s*\(/.test(line) && /(get|post|put|patch|delete)/.test(line);
+    // Only match if it's actually an Akka HTTP route definition
+    // Look for: path("...") { get { ... } } or pathPrefix("...") { ... }
+    // Or: get(path("...")) { ... }
+    return (
+      // Pattern: path("...") or pathPrefix("...")
+      (/path(Prefix)?\s*\(\s*"[^"]*"/.test(line) && /(get|post|put|patch|delete)/i.test(line)) ||
+      // Pattern: get(path("...")) or similar
+      /(get|post|put|patch|delete)\s*\(\s*path\s*\(/i.test(line) ||
+      // Pattern: (get|post|put|patch|delete) { ... } with path context
+      (/(get|post|put|patch|delete)\s*\{/i.test(line) && line.includes('path'))
+    );
   }
 
   private extractAkkaRoute(line: string, filePath: string, lineNumber: number, className?: string): Endpoint | null {
-    const methodMatch = line.match(/(get|post|put|patch|delete)\s*\(/i);
+    // Extract HTTP method
+    const methodMatch = line.match(/(get|post|put|patch|delete)/i);
     if (!methodMatch) return null;
 
     const method = methodMatch[1].toUpperCase() as HttpMethod;
     
-    const pathMatch = line.match(/path\s*\(\s*"([^"]*)"/);
-    const path = pathMatch?.[1] || '';
+    // Extract path - look for path("...") or pathPrefix("...")
+    const pathMatch = line.match(/path(?:Prefix)?\s*\(\s*"([^"]*)"/);
+    let path = pathMatch?.[1] || '';
+    
+    // If no path found, it might be a route without explicit path
+    if (!path) {
+      // Look for string literals that might be paths
+      const stringMatch = line.match(/"([^"]*\/[^"]*)"/);
+      path = stringMatch?.[1] || '';
+    }
+
+    // Only return endpoint if we have a valid path
+    if (!path || path === '/') {
+      return null;
+    }
 
     return {
       method,
-      path: path || '/',
+      path: path.startsWith('/') ? path : `/${path}`,
       filePath,
       lineNumber,
       className

@@ -58,3 +58,6 @@ yarn-error.log
 # Temporary folders
 tmp/
 temp/
+
+# Output files
+output/

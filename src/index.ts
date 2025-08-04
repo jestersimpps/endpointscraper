@@ -6,6 +6,7 @@ import { resolve } from 'path';
 import chalk from 'chalk';
 import { FileScanner } from '@/services/file-scanner';
 import { OutputFormatter } from '@/services/output-formatter';
+import { CsvExporter } from '@/services/csv-exporter';
 
 const program = new Command();
 
@@ -16,6 +17,7 @@ program
   .argument('<directory>', 'Directory path to scan for endpoints')
   .option('-s, --summary', 'Show summary by HTTP method')
   .option('-q, --quiet', 'Suppress detailed output')
+  .option('--no-csv', 'Skip CSV export (exports by default)')
   .action(async (directory: string, options) => {
     try {
       const targetPath = resolve(directory);
@@ -29,6 +31,7 @@ program
       
       const scanner = new FileScanner();
       const formatter = new OutputFormatter();
+      const csvExporter = new CsvExporter();
       
       const result = await scanner.scanDirectory(targetPath);
       
@@ -38,6 +41,12 @@ program
       
       if (options.summary) {
         console.log(formatter.formatSummary(result));
+      }
+
+      if (options.csv !== false) {
+        const csvPath = csvExporter.generateOutputPath(targetPath);
+        await csvExporter.exportToCsv(result, csvPath);
+        console.log(chalk.green(`📄 CSV exported to: ${csvPath}`));
       }
       
       if (result.endpoints.length === 0 && result.errors.length === 0) {

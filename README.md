@@ -51,8 +51,11 @@ npm run dev /path/to/your/project --summary
 # Quiet mode (suppress detailed output)
 npm run dev /path/to/your/project --quiet
 
+# Export results to CSV file
+npm run dev /path/to/your/project --csv
+
 # Combine options
-npm run dev /path/to/your/project --summary --quiet
+npm run dev /path/to/your/project --summary --quiet --csv
 ```
 
 ### Examples
@@ -65,6 +68,11 @@ npm run dev ./my-spring-boot-app
 #### Scan with summary
 ```bash
 npm run dev ./my-scala-project --summary
+```
+
+#### Export to CSV
+```bash
+npm run dev ./my-project --csv
 ```
 
 ## Supported Frameworks & Patterns
@@ -149,6 +157,22 @@ val route =
   DELETE 3
 ```
 
+### CSV Export
+When using the `--csv` option, results are saved to `./output/endpoints-[timestamp].csv` with the following columns:
+- Method
+- Path  
+- File Path
+- Line Number
+- Class Name
+- Method Name
+
+Example CSV content:
+```csv
+Method,Path,File Path,Line Number,Class Name,Method Name
+GET,/api/users,/src/controllers/UserController.java,45,UserController,getUsers
+POST,/api/users,/src/controllers/UserController.java,52,UserController,createUser
+```
+
 ## Configuration
 
 ### File Patterns
@@ -163,6 +187,9 @@ The tool automatically scans for:
 - `.git/`
 - `test/`, `tests/` (Test directories)
 
+### Output Directory
+- `output/` - Contains generated CSV files (ignored by git)
+
 ## Development
 
 ### Project Structure
@@ -174,7 +201,8 @@ src/
 │   ├── file-scanner.ts      # Main scanning service
 │   ├── java-extractor.ts    # Java endpoint extraction
 │   ├── scala-extractor.ts   # Scala endpoint extraction
-│   └── output-formatter.ts  # Result formatting
+│   ├── output-formatter.ts  # Result formatting
+│   └── csv-exporter.ts      # CSV export functionality
 └── index.ts                 # CLI entry point
 ```
 
