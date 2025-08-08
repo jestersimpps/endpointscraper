@@ -239,27 +239,22 @@ export class ScalaEndpointExtractor {
     
     const pathPart = line.substring(rootIndex + 4); // Skip "Root"
     
-    // Match quoted strings like "users", "about", "me"
-    const quotedMatches = pathPart.match(/"([^"]+)"/g);
-    if (quotedMatches) {
-      quotedMatches.forEach(match => {
-        pathSegments.push(match.slice(1, -1)); // Remove quotes
-      });
-    }
+    // Process path segments in order using a combined regex that matches both quoted strings and path variables
+    // This regex matches either "quoted" strings or PathDecoder(param) patterns separated by /
+    const segmentRegex = /(?:\/\s*("([^"]+)"|([A-Z]\w*(?:PathDecoder|Decoder|Var|Id)?)\(([^)]*)\)))/g;
     
-    // Match path variables like BestekId(id), IntVar(num)
-    const variableMatches = pathPart.match(/[A-Z]\w*\([^)]*\)/g);
-    if (variableMatches) {
-      variableMatches.forEach(match => {
-        // Convert BestekId(id) to :id, IntVar(num) to :num
-        const paramMatch = match.match(/\(([^)]*)\)/);
-        if (paramMatch && paramMatch[1]) {
-          pathSegments.push(`:${paramMatch[1]}`);
-        } else {
-          // If no parameter name, use generic placeholder
-          pathSegments.push(':id');
-        }
-      });
+    let match;
+    while ((match = segmentRegex.exec(pathPart)) !== null) {
+      if (match[2]) {
+        // It's a quoted string
+        pathSegments.push(match[2]);
+      } else if (match[3] && match[4]) {
+        // It's a path variable like VoIdPathDecoder(voId)
+        pathSegments.push(`:${match[4]}`);
+      } else if (match[3]) {
+        // It's a path variable without parameter name
+        pathSegments.push(':id');
+      }
     }
     
     // Build the final path
